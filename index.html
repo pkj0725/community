@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shades</title>
+  <link rel="shortcut icon" href="../assets/sh.jpeg" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Shade - Social Media Network">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <nav>
+    <div class="header">스핀짓주 마스터</div>
+    <ul>
+      <a href="#">
+        <li>
+          <ion-icon name="search-outline"></ion-icon>
+        </li>
+      </a>
+      <a href="#">
+        <li id="login-button" style="cursor: pointer;" title="로그인">
+          <ion-icon name="person-circle-outline" size="large"></ion-icon>
+        </li>
+      <a href="#">
+        <li id="logout-button" style="cursor: pointer;" title="로그아웃">
+          <span class="material-icons">logout</span>
+        </li>
+
+      </a>
+    </ul>
+  </nav>
+  <main>
+    <div class="posts">
+      <div class="newpost">
+        <div class="p">
+          <textarea name="Title.." id="postTitle" cols="30" placeholder="Title..." rows="1"></textarea>
+          <textarea name="post" id="postBody" cols="30" placeholder="Create New Post..." rows="1"></textarea>
+          <div id="mediaPreview" style="margin-top:10px;"></div>
+        </div>
+        <div class="toolbar">
+          <ul>
+            <li>
+  <ion-icon name="images-outline" size="large" id="uploadImageIcon" style="cursor:pointer;"></ion-icon>
+  <input type="file" id="imageInput" accept="image/*" style="display: none;">
+</li>
+<li>
+  <ion-icon name="videocam-outline" size="large" id="uploadVideoIcon" style="cursor:pointer;"></ion-icon>
+  <input type="file" id="videoInput" accept="video/*" style="display: none;">
+</li>
+
+<!-- 미리보기 위치 -->
+<div id="mediaPreview" style="margin-top:10px;"></div>
+            <li id="submitPost"><ion-icon name="arrow-up-circle-outline" size = "large"></ion-icon></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="menubar">
+        <ul>
+          <li>Latest</li>
+          <li>Top</li>
+          <li>Popular</li>
+        </ul>
+      </div>
+      <div class="newposts">
+
+          <div id="post-content">
+          </div>
+      </div>
+
+
+      <script>
+        const supabaseUrl = 'https://nxcscmzjnqxvytjrhrpl.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54Y3NjbXpqbnF4dnl0anJocnBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3MzgzMjksImV4cCI6MjA2NTMxNDMyOX0.aCOilLZRM3Vh0YAFP7ZwzTHzwr7CnsMPBh3Ce9IEvZM'
+        const client = supabase.createClient(supabaseUrl, supabaseKey);
+
+
+     async function signInWithGoogle() {
+       const { data, error } = await client.auth.signInWithOAuth({
+         provider: "Google",
+         options: {
+           redirectTo: "http://localhost:8000",
+         },
+       });
+     }
+     document
+       .querySelector("#login-button")
+       .addEventListener("click", signInWithGoogle);
+
+       async function checkLogin() {
+       const authInfo = await client.auth.getSession();
+       const session = authInfo.data.session;
+       document.querySelector("#login-button").style.display = "none";
+       document.querySelector("#logout-button").style.display = "none";
+       if (session === null) {
+         document.querySelector("#login-button").style.display = "inline";
+       } else {
+         document.querySelector("#logout-button").style.display = "inline";
+       }
+     }
+     checkLogin();
+
+     async function signOut() {
+       const { error } = await client.auth.signOut();
+       checkLogin();
+     }
+     document.querySelector("#logout-button").addEventListener("click", signOut);
+
+     async function refreshHistory() {
+       let { data: record, error } = await client.from("posting").select("*").order("id", { ascending: false }); // 최신 글 먼저 오도록
+       let allPostsHTML = "";
+  for (let i = 0; i < record.length; i++) 
+    {
+    const { title, body, id, email, profilePic } = record[i];
+    allPostsHTML += makePostHTML(title, body, id, email, profilePic, record[i].media_url, record[i].media_type);
+  }
+
+  document.querySelector("#post-content").innerHTML = allPostsHTML;
+  document.querySelectorAll(".delete-icon").forEach(icon => {
+    icon.addEventListener("click", () => {
+      const id = icon.getAttribute("data-id");
+      deleteRecord(id);
+    });
+  });
+
+     }
+     refreshHistory();
+
+     async function deleteRecord(id) {
+  const { data, error } = await client
+    .from("posting")
+    .delete()
+    .eq("id", id);
+    
+  refreshHistory();
+}
+
+
+
+
+     async function recordHandler() {
+      const title = document.getElementById("postTitle").value.trim();
+      const body = document.getElementById("postBody").value.trim();
+
+      const { data: userData, error: userError } = await client.auth.getUser();
+
+      if (userError || !userData?.user) {
+    alert("로그인이 필요합니다.");
+    
+  }
+
+  const user = userData.user;
+  const email = user.email;
+  const profilePic = user.user_metadata?.avatar_url || "";
+
+      const { error } = await client
+         .from("posting")
+         .insert([{ title: title, body: body,email, profilePic, media_url: uploadedMediaUrl,
+      media_type: uploadedMediaType}]);
+
+         if (error) {
+         console.error("오류:", error.message);
+         alert("로그인이 필요합니다.");
+        }
+
+         const newHTML = makePostHTML(title, body);
+         document.querySelector("#post-content").insertAdjacentHTML("beforeend", newHTML);
+
+         document.getElementById("postTitle").value = "";
+         document.getElementById("postBody").value = "";
+
+         document.getElementById("mediaPreview").innerHTML = "";
+
+         uploadedMediaUrl = null;
+         uploadedMediaType = null;
+
+         document.getElementById("postTitle").style.height = "auto";
+         document.getElementById("postBody").style.height = "auto";
+       refreshHistory();
+     }
+     document
+       .querySelector("#submitPost")
+       .addEventListener("click", recordHandler);
+
+
+       function showSection(section) {
+          // Remove 'active' class from all sections
+          document.querySelectorAll('.playground .layout').forEach(function(el) {
+            el.classList.remove('active');
+          });
+          // Add 'active' class to the selected section
+          document.querySelector(`.${section}`).classList.add('active');
+          // Scroll the selected section into view
+          document.querySelector(`.${section}`).scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest'
+          });
+        }
+
+        const autoResize = (el) => {
+      el.style.height = 'auto';
+      el.style.height = el.scrollHeight + 'px';
+    };
+
+    // 모든 textarea에 적용
+    document.querySelectorAll('textarea').forEach(textarea => {
+      textarea.addEventListener('input', () => autoResize(textarea));
+      window.addEventListener('load', () => autoResize(textarea)); // 페이지 로드 시 높이 초기화
+    });
+
+    if (!document.querySelector('.Post')) {
+  const elements = document.querySelectorAll('.post-child, .another-class, .anything-else');
+  elements.forEach(el => el.style.display = 'none');
+}
+
+let uploadedMediaUrl = null;
+let uploadedMediaType = null;
+
+// 이미지 업로드
+document.getElementById("uploadImageIcon").addEventListener("click", () => {
+  document.getElementById("imageInput").click();
+});
+document.getElementById("imageInput").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const { data, error } = await client.storage
+    .from("post-image-vidio")
+    .upload(`images/${Date.now()}_${file.name}`, file);
+
+  if (error) {
+    alert("이미지 업로드 실패: " + error.message);
+    return;
+  }
+
+  const { data: publicUrlData } = client.storage
+    .from("post-image-vidio")
+    .getPublicUrl(data.path);
+
+  uploadedMediaUrl = publicUrlData.publicUrl;
+  uploadedMediaType = "image";
+
+  document.getElementById("mediaPreview").innerHTML = `
+    <img src="${uploadedMediaUrl}" style="max-height: 150px; border-radius: 8px;" />
+  `;
+});
+
+// 동영상 업로드
+document.getElementById("uploadVideoIcon").addEventListener("click", () => {
+  document.getElementById("videoInput").click();
+});
+document.getElementById("videoInput").addEventListener("change", async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const { data, error } = await client.storage
+    .from("post-image-vidio")
+    .upload(`videos/${Date.now()}_${file.name}`, file);
+
+  if (error) {
+    alert("동영상 업로드 실패: " + error.message);
+    return;
+  }
+
+  const { data: publicUrlData } = client.storage
+    .from("post-image-vidio")
+    .getPublicUrl(data.path);
+
+  uploadedMediaUrl = publicUrlData.publicUrl;
+  uploadedMediaType = "video";
+
+  document.getElementById("mediaPreview").innerHTML = `
+    <video src="${uploadedMediaUrl}" controls style="max-height: 200px; border-radius: 8px;"></video>
+  `;
+});
+
+document.addEventListener("click", async function (e) {
+  // 댓글창 열기
+  if (e.target.classList.contains("comment-icon")) {
+    const postId = e.target.getAttribute("data-id");
+    const section = document.getElementById(`comment-section-${postId}`);
+    section.style.display = section.style.display === "none" ? "block" : "none";
+    loadComments(postId);
+  }
+
+  // 댓글 등록
+  if (e.target.classList.contains("submit-comment")) {
+    const postId = e.target.getAttribute("data-id");
+    const input = document.querySelector(`.comment-input[data-id="${postId}"]`);
+    const commentText = input.value.trim();
+
+    if (!commentText) return;
+
+    const { data: userData } = await client.auth.getUser();
+    if (!userData?.user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const email = userData.user.email;
+
+    // Supabase 댓글 저장
+    await client.from("comment").insert([{ post_id: postId, email, body: commentText }]);
+
+    input.value = "";
+    loadComments(postId);
+  }
+});
+
+
+async function loadComments(postId) {
+  const { data: comments, error } = await client
+    .from("comment")
+    .select("*")
+    .eq("post_id", postId)
+    .order("id", { ascending: false });
+
+  const container = document.getElementById(`comments-list-${postId}`);
+  container.innerHTML = comments
+    .map(
+      (c) => `
+      <div style="margin: 5px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+        <strong>${c.email}</strong>: ${c.body}
+      </div>
+    `
+    )
+    .join("");
+}
+
+
+
+
+
+
+// 게시글을 HTML 템플릿 형태로 만드는 함수
+function makePostHTML(title, body, id, email = "", profilePic = "" , media_url = "", media_type = "") {
+
+  let mediaHTML = "";
+  if (media_url) {
+    if (media_type === "image") {
+      mediaHTML = `<img src="${media_url}" style="max-width: 100%; border-radius: 8px;" />`;
+    } else if (media_type === "video") {
+      mediaHTML = `<video src="${media_url}" controls style="max-width: 100%; border-radius: 8px;"></video>`;
+    }
+  }
+  return `
+    <div class="post" data-post-id="${id}">
+      <div class="author">
+        <div class="logo">
+          <img src="${profilePic}" alt="Profile Picture" onerror="this.src='default.png'">
+        </div>
+        <div class="name">${email}</div>
+      </div>
+
+      <div class="post-body">
+        <h2>${title}</h2>
+        <p>${body}</p>
+        ${mediaHTML}
+      </div>
+
+      <div class="post-footer">
+        <div class="like"><ion-icon name="heart-outline"></ion-icon></div>
+        <div class="dislike"><ion-icon name="heart-dislike-outline"></ion-icon></div>
+        <div class="comment"><ion-icon name="chatbubble-ellipses-outline" class="comment-icon" data-id="${id}"></ion-icon></div>
+        <div class="Delete"><ion-icon name="trash-outline" class="delete-icon" data-id="${id}"></ion-icon></div>
+
+      </div>
+      <div class="comment-section" id="comment-section-${id}" style="display: none; margin-top: 10px;">
+        <input type="text" placeholder="댓글을 입력하세요..." class="comment-input" data-id="${id}" style="width: 80%; padding: 5px;" />
+        <button class="submit-comment" data-id="${id}">등록</button>
+        <div class="comments-list" id="comments-list-${id}"></div>
+      </div>
+    </div>
+  `;
+}
+
+
+      </script>
+
+    </div>
+  </main>
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+</body>
+
+
+</html>
