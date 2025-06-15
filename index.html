@@ -135,6 +135,35 @@
     .from("posting")
     .delete()
     .eq("id", id);
+
+  client
+  .channel("realtime-posts")
+  .on(
+    "postgres_changes",
+    {
+      event: "INSERT",
+      schema: "public",
+      table: "posting",
+    },
+    (payload) => {
+      const post = payload.new;
+      const { title, body, id, email, profilePic, media_url, media_type } = post;
+      const newHTML = makePostHTML(title, body, id, email, profilePic, media_url, media_type);
+
+      // 새 글을 맨 위에 추가
+      document.querySelector("#post-content").insertAdjacentHTML("afterbegin", newHTML);
+
+      // 삭제 버튼 이벤트 다시 연결 (중요!)
+      document.querySelectorAll(".delete-icon").forEach(icon => {
+        icon.addEventListener("click", () => {
+          const id = icon.getAttribute("data-id");
+          deleteRecord(id);
+        });
+      });
+    }
+  )
+  .subscribe();
+
     
   refreshHistory();
 }
