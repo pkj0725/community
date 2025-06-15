@@ -224,6 +224,7 @@ let uploadedMediaType = null;
 document.getElementById("uploadImageIcon").addEventListener("click", () => {
   document.getElementById("imageInput").click();
 });
+document.getElementById("imageInput").setAttribute("multiple", true);
 document.getElementById("imageInput").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -253,6 +254,7 @@ document.getElementById("imageInput").addEventListener("change", async (event) =
 document.getElementById("uploadVideoIcon").addEventListener("click", () => {
   document.getElementById("videoInput").click();
 });
+document.getElementById("videoInput").setAttribute("multiple", true);
 document.getElementById("videoInput").addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
