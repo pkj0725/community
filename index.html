@@ -128,33 +128,7 @@
   });
 
      }
-    client
-  .channel("realtime-posts")
-  .on(
-    "postgres_changes",
-    {
-      event: "INSERT",
-      schema: "public",
-      table: "posting",
-    },
-    (payload) => {
-      const post = payload.new;
-      const { title, body, id, email, profilePic, media_url, media_type } = post;
-      const newHTML = makePostHTML(title, body, id, email, profilePic, media_url, media_type);
-
-      // 새 글을 맨 위에 추가
-      document.querySelector("#post-content").insertAdjacentHTML("afterbegin", newHTML);
-
-      // 삭제 버튼 이벤트 다시 연결 (중요!)
-      document.querySelectorAll(".delete-icon").forEach(icon => {
-        icon.addEventListener("click", () => {
-          const id = icon.getAttribute("data-id");
-          deleteRecord(id);
-        });
-      });
-    }
-  )
-  .subscribe();
+    
      refreshHistory();
 
      async function deleteRecord(id) {
@@ -403,6 +377,60 @@ function makePostHTML(title, body, id, email = "", profilePic = "" , media_url =
     </div>
   `;
 }
+
+      client
+  .channel('custom-all-posts-channel')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'posting',
+    },
+    (payload) => {
+      const post = payload.new;
+      const { title, body, id, email, profilePic, media_url, media_type } = post;
+      const newPostHTML = makePostHTML(title, body, id, email, profilePic, media_url, media_type);
+      const postContainer = document.querySelector("#post-content");
+
+      // 이미 같은 ID의 게시글이 있다면 중복 추가 방지
+      if (!document.querySelector(`.post[data-post-id="${id}"]`)) {
+        postContainer.insertAdjacentHTML("afterbegin", newPostHTML);
+      }
+    }
+  )
+  .subscribe();
+
+  client
+  .channel('custom-all-comments-channel')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'comment',
+    },
+    (payload) => {
+      const newComment = payload.new;
+      const postId = newComment.post_id;
+      const email = newComment.email;
+      const body = newComment.body;
+
+      const container = document.getElementById(`comments-list-${postId}`);
+      if (!container) return;
+
+      // 새 댓글을 위에 추가
+      const newCommentHTML = `
+        <div style="margin: 5px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">
+          <strong>${email}</strong>: ${body}
+        </div>
+      `;
+
+      container.insertAdjacentHTML('afterbegin', newCommentHTML);
+    }
+  )
+  .subscribe();
+
 
 
       </script>
