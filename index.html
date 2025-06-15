@@ -128,15 +128,7 @@
   });
 
      }
-     refreshHistory();
-
-     async function deleteRecord(id) {
-  const { data, error } = await client
-    .from("posting")
-    .delete()
-    .eq("id", id);
-
-  client
+    client
   .channel("realtime-posts")
   .on(
     "postgres_changes",
@@ -163,8 +155,13 @@
     }
   )
   .subscribe();
+     refreshHistory();
 
-    
+     async function deleteRecord(id) {
+  const { data, error } = await client
+    .from("posting")
+    .delete()
+    .eq("id", id);
   refreshHistory();
 }
 
