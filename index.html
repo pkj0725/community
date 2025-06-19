@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shades</title>
+  <title>DO-IT</title>
   <link rel="shortcut icon" href="../assets/sh.jpeg" type="image/x-icon">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
@@ -206,10 +206,10 @@
       el.style.height = el.scrollHeight + 'px';
     };
 
-    // 모든 textarea에 적용
+  
     document.querySelectorAll('textarea').forEach(textarea => {
       textarea.addEventListener('input', () => autoResize(textarea));
-      window.addEventListener('load', () => autoResize(textarea)); // 페이지 로드 시 높이 초기화
+      window.addEventListener('load', () => autoResize(textarea)); 
     });
 
     if (!document.querySelector('.Post')) {
@@ -220,7 +220,6 @@
 let uploadedMediaUrl = null;
 let uploadedMediaType = null;
 
-// 이미지 업로드
 document.getElementById("uploadImageIcon").addEventListener("click", () => {
   document.getElementById("imageInput").click();
 });
@@ -250,7 +249,7 @@ document.getElementById("imageInput").addEventListener("change", async (event) =
   `;
 });
 
-// 동영상 업로드
+
 document.getElementById("uploadVideoIcon").addEventListener("click", () => {
   document.getElementById("videoInput").click();
 });
@@ -281,7 +280,6 @@ document.getElementById("videoInput").addEventListener("change", async (event) =
 });
         
 document.addEventListener("click", async function (e) {
-  // 댓글창 열기
   if (e.target.classList.contains("comment-icon")) {
     const postId = e.target.getAttribute("data-id");
     const section = document.getElementById(`comment-section-${postId}`);
@@ -296,7 +294,7 @@ document.addEventListener("click", async function (e) {
   if (e.target.classList.contains("submit-comment")) {
     const postId = e.target.getAttribute("data-id");
     const button = e.target;
-    button.disabled = true; // 중복 클릭 방지
+    button.disabled = true; 
 
     try {
       const input = document.querySelector(`.comment-input[data-id="${postId}"]`);
@@ -319,9 +317,9 @@ document.addEventListener("click", async function (e) {
       await client.from("comment").insert([{ post_id: postId, email, body: commentText }]);
 
       input.value = "";
-      await loadComments(postId);  // 새로 불러오기
+      await loadComments(postId); 
     } finally {
-      button.disabled = false; // 다시 버튼 활성화
+      button.disabled = false; 
     }
   }
 });
@@ -351,7 +349,7 @@ async function loadComments(postId) {
 
 
 
-// 게시글을 HTML 템플릿 형태로 만드는 함수
+
 function makePostHTML(title, body, id, email = "", profilePic = "" , media_url = "", media_type = "") {
 
   let mediaHTML = "";
@@ -415,7 +413,6 @@ function makePostHTML(title, body, id, email = "", profilePic = "" , media_url =
   )
   .subscribe();
 
-// ✅ 실시간 댓글 추가 — 중복 방지 로직 포함
 client
   .channel('custom-all-comments-channel')
   .on(
@@ -434,12 +431,10 @@ client
       const container = document.getElementById(`comments-list-${postId}`);
       if (!container) return;
 
-      // ✅ 중복 방지: 같은 내용이 이미 있는 경우 skip
       const newCommentText = `${email}: ${body}`.trim();
       const existingComments = Array.from(container.children).map(el => el.textContent.trim());
       if (existingComments.includes(newCommentText)) return;
 
-      // 댓글 DOM에 추가
       const newCommentHTML = `
         <div style="margin: 5px 0; border-bottom: 1px solid #eee; padding-bottom: 4px;">
           <strong>${email}</strong>: ${body}
