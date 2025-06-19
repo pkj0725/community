@@ -288,9 +288,6 @@ document.addEventListener("click", async function (e) {
     section.style.display = section.style.display === "none" ? "block" : "none";
     loadComments(postId);
   }
-
-if (!window.commentEventRegistered) {
-  window.commentEventRegistered = true;
   
   // 댓글 등록
   if (e.target.classList.contains("submit-comment")) {
