@@ -280,6 +280,9 @@ document.getElementById("videoInput").addEventListener("change", async (event) =
   `;
 });
 
+if (!window.commentEventRegistered) {
+  window.commentEventRegistered = true;
+        
 document.addEventListener("click", async function (e) {
   // 댓글창 열기
   if (e.target.classList.contains("comment-icon")) {
