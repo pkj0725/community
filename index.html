@@ -294,6 +294,7 @@ document.addEventListener("click", async function (e) {
     const postId = e.target.getAttribute("data-id");
     const input = document.querySelector(`.comment-input[data-id="${postId}"]`);
     const commentText = input.value.trim();
+    button.disabled = true;
 
     if (!commentText) return;
 
