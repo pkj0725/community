@@ -279,9 +279,6 @@ document.getElementById("videoInput").addEventListener("change", async (event) =
     <video src="${uploadedMediaUrl}" controls style="max-height: 200px; border-radius: 8px;"></video>
   `;
 });
-
-if (!window.commentEventRegistered) {
-  window.commentEventRegistered = true;
         
 document.addEventListener("click", async function (e) {
   // 댓글창 열기
@@ -292,6 +289,9 @@ document.addEventListener("click", async function (e) {
     loadComments(postId);
   }
 
+if (!window.commentEventRegistered) {
+  window.commentEventRegistered = true;
+  
   // 댓글 등록
   if (e.target.classList.contains("submit-comment")) {
     const postId = e.target.getAttribute("data-id");
